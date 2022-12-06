@@ -1,14 +1,16 @@
 const solution = (nChars: number) => (line: string) => {
   const uniq = new Set<string>()
-  for (let i = nChars; i < line.length; i++) {
-    uniq.clear()
+
+  for (let i = nChars; i <= line.length; i++) {
     for (let z = i - nChars; z < i; z++) {
       const char = line[z]
       if (uniq.has(char)) break
       uniq.add(char)
     }
     if (uniq.size === nChars) return i
+    uniq.clear()
   }
+
   return Infinity
 }
 
