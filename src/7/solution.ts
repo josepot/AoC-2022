@@ -82,7 +82,7 @@ const findSmallest = (missing: number, folder: Folder, best: Folder): Folder =>
   folder.totalSize < missing || folder.totalSize > best.totalSize
     ? best
     : [...folder.children.values()]
-        .map((inner) => findSmallest(missing, inner, best))
+        .map((inner) => findSmallest(missing, inner, folder))
         .reduce((a, b) => (b.totalSize < a.totalSize ? b : a), folder)
 
 const solution2 = (lines: string[]) => {
