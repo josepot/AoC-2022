@@ -51,6 +51,53 @@ const solution1 = (lines: string[]) => {
   ).nSteps
 }
 
-const solution2 = (lines: string[]) => {}
+const solution2 = (lines: string[]) => {
+  let target = ""
 
-export default [solution1]
+  const positions = new Map<string, number>()
+  lines.forEach((line, y) => {
+    line.split("").forEach((char, x) => {
+      const id = `${y},${x}`
+      if (char === "S") {
+        return positions.set(id, 0)
+      }
+      if (char === "E") {
+        target = id
+        return positions.set(id, 25)
+      }
+      positions.set(id, char.charCodeAt(0) - 97)
+    })
+  })
+
+  return graphDistinctSearch(
+    {
+      id: target,
+      nSteps: 0,
+    },
+    (current) => {
+      if (positions.get(current.id) === 0) return true
+
+      const [y, x] = current.id.split(",").map(Number)
+      const nSteps = current.nSteps + 1
+      const currentHeight = positions.get(current.id)!
+      const deltas: Array<[number, number]> = [
+        [1, 0],
+        [-1, 0],
+        [0, -1],
+        [0, 1],
+      ]
+
+      const result = deltas
+        .map(([yD, xD]) => `${y + yD},${x + xD}`)
+        .filter((id) => {
+          if (!positions.has(id)) return false
+          return positions.get(id)! + 1 >= currentHeight
+        })
+        .map((id) => ({ id, nSteps }))
+      return result
+    },
+    (a, b) => b.nSteps - a.nSteps,
+  ).nSteps
+}
+
+export default [solution1, solution2]
