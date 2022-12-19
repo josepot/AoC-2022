@@ -93,26 +93,6 @@ const generatePurchases = (
     ]
   }
 
-  /*
-  if (
-    robots.obsidian < blueprint.maxCosts.obsidian &&
-    blueprint.costs.obsidian.every((x) => materials[x.type] >= x.quantity)
-  ) {
-    const nextMaterials = { ...materials }
-    blueprint.costs.obsidian.forEach((x) => {
-      nextMaterials[x.type] -= x.quantity
-    })
-
-    return [
-      {
-        materials: nextMaterials,
-        newRobots: [Material.Obsidian],
-        avoidRobots: [],
-      },
-    ]
-  }
-  */
-
   const result: Array<{
     materials: State["materials"]
     newRobots: Array<Material>
@@ -153,170 +133,86 @@ const generatePurchases = (
   return result
 }
 
+const solveIt = (blueprints: Blueprint[], nMinutes: number) => {
+  return blueprints.map((blueprint) => {
+    const initialState: State = {
+      blueprint,
+      minute: 0,
+      materials: {
+        ore: 0,
+        clay: 0,
+        obsidian: 0,
+        geode: 0,
+      },
+      robots: {
+        ore: 1,
+        clay: 0,
+        obsidian: 0,
+        geode: 0,
+      },
+      avoid: new Set(),
+    }
+
+    return graphSearch<State>(
+      initialState,
+      (current) => {
+        if (current.minute === nMinutes) return true
+
+        const result = generatePurchases(
+          blueprint,
+          current.materials,
+          current.robots,
+          current.avoid,
+        ).map((purchases) => {
+          const nextMaterials = { ...purchases.materials }
+          Object.entries(current.robots).forEach(([material, nRobots]) => {
+            nextMaterials[material as Material] += nRobots
+          })
+
+          const nextRobots = { ...current.robots }
+          purchases.newRobots.forEach((x) => {
+            nextRobots[x]++
+          })
+
+          return {
+            blueprint,
+            minute: current.minute + 1,
+            materials: nextMaterials,
+            robots: nextRobots,
+            avoid: new Set(purchases.avoidRobots),
+          }
+        })
+
+        return result
+      },
+      (a, b) => {
+        if (b.minute !== a.minute) return b.minute - a.minute
+
+        if (a.materials.geode !== b.materials.geode)
+          return a.materials.geode - b.materials.geode
+        if (a.materials.obsidian !== b.materials.obsidian)
+          return a.materials.obsidian - b.materials.obsidian
+        if (a.materials.clay !== b.materials.clay)
+          return a.materials.clay - b.materials.clay
+        return a.materials.ore - b.materials.ore
+      },
+    )
+  })
+}
+
 const solution1 = (lines: string[]) => {
   const blueprints = lines.map(parseBluePrint)
 
-  return blueprints
-    .map((blueprint) => {
-      const initialState: State = {
-        blueprint,
-        minute: 0,
-        materials: {
-          ore: 0,
-          clay: 0,
-          obsidian: 0,
-          geode: 0,
-        },
-        robots: {
-          ore: 1,
-          clay: 0,
-          obsidian: 0,
-          geode: 0,
-        },
-        avoid: new Set(),
-      }
-
-      return graphSearch<State>(
-        initialState,
-        (current) => {
-          if (current.minute === 24) return true
-
-          const result = generatePurchases(
-            blueprint,
-            current.materials,
-            current.robots,
-            current.avoid,
-          ).map((purchases) => {
-            const nextMaterials = { ...purchases.materials }
-            Object.entries(current.robots).forEach(([material, nRobots]) => {
-              nextMaterials[material as Material] += nRobots
-            })
-
-            const nextRobots = { ...current.robots }
-            purchases.newRobots.forEach((x) => {
-              nextRobots[x]++
-            })
-
-            return {
-              blueprint,
-              minute: current.minute + 1,
-              materials: nextMaterials,
-              robots: nextRobots,
-              avoid: new Set(purchases.avoidRobots),
-            }
-          })
-
-          return result
-        },
-        (a, b) => {
-          if (b.minute !== a.minute) return b.minute - a.minute
-
-          if (a.materials.geode !== b.materials.geode) {
-            return a.materials.geode - b.materials.geode
-          }
-
-          if (a.materials.obsidian !== b.materials.obsidian) {
-            return a.materials.obsidian - b.materials.obsidian
-          }
-          if (a.materials.clay !== b.materials.clay) {
-            return a.materials.clay - b.materials.clay
-          }
-
-          return a.materials.ore - b.materials.ore
-        },
-      )
-    })
-    .map((x) => {
-      console.log(x)
-      return x.materials.geode * x.blueprint.id
-    })
+  return solveIt(blueprints, 24)
+    .map((x) => x.materials.geode * x.blueprint.id)
     .reduce(add)
 }
 
 const solution2 = (lines: string[]) => {
   const blueprints = lines.map(parseBluePrint)
 
-  return blueprints
-    .slice(0, 3)
-    .map((blueprint) => {
-      const initialState: State = {
-        blueprint,
-        minute: 0,
-        materials: {
-          ore: 0,
-          clay: 0,
-          obsidian: 0,
-          geode: 0,
-        },
-        robots: {
-          ore: 1,
-          clay: 0,
-          obsidian: 0,
-          geode: 0,
-        },
-        avoid: new Set(),
-      }
-
-      let lastMin = 0
-
-      return graphSearch<State>(
-        initialState,
-        (current) => {
-          if (current.minute === 32) return true
-
-          if (current.minute !== lastMin) {
-            console.log(current.minute)
-            lastMin = current.minute
-          }
-
-          const result = generatePurchases(
-            blueprint,
-            current.materials,
-            current.robots,
-            current.avoid,
-          ).map((purchases) => {
-            const nextMaterials = { ...purchases.materials }
-            Object.entries(current.robots).forEach(([material, nRobots]) => {
-              nextMaterials[material as Material] += nRobots
-            })
-
-            const nextRobots = { ...current.robots }
-            purchases.newRobots.forEach((x) => {
-              nextRobots[x]++
-            })
-
-            return {
-              blueprint,
-              minute: current.minute + 1,
-              materials: nextMaterials,
-              robots: nextRobots,
-              avoid: new Set(purchases.avoidRobots),
-            }
-          })
-
-          return result
-        },
-        (a, b) => {
-          if (b.minute !== a.minute) return b.minute - a.minute
-
-          if (a.materials.geode !== b.materials.geode) {
-            return a.materials.geode - b.materials.geode
-          }
-
-          if (a.materials.obsidian !== b.materials.obsidian) {
-            return a.materials.obsidian - b.materials.obsidian
-          }
-          if (a.materials.clay !== b.materials.clay) {
-            return a.materials.clay - b.materials.clay
-          }
-
-          return a.materials.ore - b.materials.ore
-        },
-      )
-    })
-    .map((x) => {
-      return x.materials.geode
-    })
+  return solveIt(blueprints.slice(0, 3), 32)
+    .map((x) => x.materials.geode)
     .reduce((a, b) => a * b)
 }
 
