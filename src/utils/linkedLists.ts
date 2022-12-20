@@ -56,7 +56,7 @@ export const doubleCircularLinkedList = <T>(values: T[]) => {
   first.prev = last
   last.next = first
 
-  return instances as any as DoubleCircularLinkedListNode<T>
+  return instances
 }
 
 export const countNodes = <T>(
